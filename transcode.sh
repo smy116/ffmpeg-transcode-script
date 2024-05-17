@@ -120,49 +120,63 @@ function set_config(){
 }
 
 
-# 遍历原始目录
+# 遍历目录并将文件路径添加到列表
 function lm_traverse_dir(){
+    local base_path="$1"
+    if [ ! -d "$base_path" ]; then
+        echo "错误: $base_path 不是一个目录."
+        return 1
+    fi
 
-    for file in `ls "$1"`
-    do
-        if [ -d "$1/$file" ]  	#"-d" 判断是否为目录
-        then
-            lm_traverse_dir "$1/$file"	#遍历子目录
-        else  
-              
-            absolute_path="$1/$file"
-
-            if [[ "$videotype_list[@]" =~ ".${absolute_path##*.}" ]];then 	#判断是否为视频
-                
-                transcode "$absolute_path"
-
-            fi
-
-        fi
+    # 使用find命令找到所有.mp4和.avi文件并添加到列表
+    find "$base_path" -type f \( -name "*.mp4" -o -name "*.avi" -o -name "*.mov" -o -name "*.mkv" \) -print0 | while IFS= read -r -d '' file; do
+        validate_path "$file" || continue
+        file_paths+=("$file")
     done
-}   
+
+    find "$base_path" -type d -print0 | while IFS= read -r -d '' dir; do
+        lm_traverse_dir "$dir"
+    done
+
+}
+
 
 function transcode(){
-    relative_path=$(echo "$1" | sed "s?$origin_dir??g")
-    new_file="$dest_dir""$relative_path"
-    
-    # 修改文件后缀名为mp4
-    new_file=$(echo "$new_file" | sed "s?.${new_file##*.}?.mp4?g")
+   
+   # 检查传入的参数是否为有效的文件
+    if [ -z "$1" ] || [ ! -f "$1" ]; then
+        echo "Error: No valid file provided."
+        return 1
+    fi
+
+    # 使用参数扩展进行安全的路径处理
+    relative_path="${1#$origin_dir}"
+    new_file_path="${dest_dir}${relative_path}"
+
+    # 确保文件路径中只进行必要的后缀名替换
+    new_file_path="${new_file_path%.*}.mp4"
     
     # 创建文件夹
     if [ ! -d "${new_file%/*}" ]; then
         mkdir -p "${new_file%/*}"
     fi
 
-    ffmpeg -hide_banner "${ffmpeg_decode_cmd[@]}" -i "$1" -strict -2 "${ffmpeg_videosize_cmd[@]}" "${ffmpeg_rc_cmd[@]}" "${ffmpeg_encode_cmd[@]}" "${ffmpeg_audio_cmd[@]}" -y "$new_file"
-    
-    # 修复权限
-    chmod 777 "$new_file"
+    # 使用ffmpeg进行转码，确保命令执行成功
+    ffmpeg -hide_banner "${ffmpeg_decode_cmd[@]}" -i "$1" -strict -2 "${ffmpeg_videosize_cmd[@]}" "${ffmpeg_rc_cmd[@]}" "${ffmpeg_encode_cmd[@]}" "${ffmpeg_audio_cmd[@]}" -y "$new_file_path" || {
+        echo "Error in file '$1': FFmpeg transcoding failed."
+        return 1
+    }
+
+    # 修复权限，确保成功
+    chmod 777 "$new_file_path" || {
+        echo "Error in file '$1': Failed to set permissions on the output file."
+        return 1
+    }
 }
 
 
 IFS=$'\t\n'
-
+file_paths=()
 videotype_list=".mp4 .mkv .mov .wmv .avi .flv"
 ffmpeg_videosize_cmd=(-vf scale_rkrga=w=-2:h="'min(720,ih)'":format=nv12:afbc=1)
 ffmpeg_rc_cmd=(-rc_mode VBR -b:v 2M -maxrate 2M -bufsize 2M)
@@ -181,14 +195,25 @@ else
 
 fi
 
+dest_dir=$(printf "%s/" "${dest_dir}")
 
 # 执行命令
 if [ -f "$origin_dir" ]; then
 
-    transcode "$origin_dir"
+    file_paths=("$origin_dir")
 
 else
 
+    origin_dir=$(printf "%s/" "${origin_dir}")
     lm_traverse_dir "$origin_dir"
 
 fi
+# 输出file_paths数组的元素数量
+echo "共计 ${#file_paths[@]} 个文件等待转码."
+read -p "按任意键开始转码..."
+
+# 遍历file_paths数组并调用transcode函数
+for file_path in "${file_paths[@]}"; do
+    transcode "$file_path"
+    echo "转码完成: $file_path"
+done
