@@ -272,7 +272,7 @@ is_video_format() {
 }
 
 # 日志写入
-write_log() {
+function _write_log() {
     local message="$1"
     echo "$1"
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $message" >> "${SCRIPT_DIR}/transcode.log"
@@ -331,9 +331,9 @@ function transcode_video(){
     # 使用ffmpeg进行转码
     ffmpeg -hide_banner "${ffmpeg_decode_cmd[@]}" -i "$1" -strict -2 "${ffmpeg_videosize_cmd[@]}" "${ffmpeg_rc_cmd[@]}" "${ffmpeg_encode_cmd[@]}" "${ffmpeg_audio_cmd[@]}" -y "$new_file_path"
     if [ $? -eq 0 ]; then
-        write_log "Transcode Success：$1"
+        _write_log "Transcode Success：$1"
     else
-        write_log "Transcode Error：$1"
+        _write_log "Transcode Error：$1"
         return 1
     fi
 
@@ -422,7 +422,7 @@ function main(){
     for file_path in "${video_file_paths[@]}"; do
         
         let transcodeTotal=transcodeTotal+1
-        write_log "开始转码第 $transcodeTotal 个文件，共计 ${#video_file_paths[@]} 个文件"
+        _write_log "开始转码第 $transcodeTotal 个文件，共计 ${#video_file_paths[@]} 个文件"
         transcode_video "$file_path"
     
     done
