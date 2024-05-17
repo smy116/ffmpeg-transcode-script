@@ -11,15 +11,18 @@
 
 # 初始化变量
 IFS=$'\t\n'
-file_paths=()
+video_file_paths=()
+other_file_paths=()
 silent_mode=0
+origin_dir=""
+dest_dir=""
 ffmpeg_decode=""
 ffmpeg_videosize_cmd=()
 ffmpeg_rc_cmd=()
 ffmpeg_decode_cmd=()
 ffmpeg_audio_cmd=()
 ffmpeg_encode_cmd=()
-video_format=("mp4" "mkv" "avi" "wmv" "flv" "mov") 
+video_format=("mp4" "mkv" "avi" "wmv" "flv" "mov" "m4v" "rm" "rmvb" "3gp" "vob") 
 
 # 根据用户选择设置输出格式
 function set_format() {
@@ -256,12 +259,24 @@ function set_video_bitrate() {
 
 }
 
+# 检查文件是否符合给定的视频格式列表
+is_video_format() {
+    local file="$1"
+    for format in "${video_format[@]}"; do
+        if [[ "$file" == *."$format" ]]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
 
 # 遍历目录并将文件路径添加到列表
 function lm_traverse_dir(){
     
     local base_path="$1"
-    local find_condition=""
+    local all_files=()
+    local file=""
     
     # 检查是否为目录
     if [ ! -d "$base_path" ]; then
@@ -269,16 +284,23 @@ function lm_traverse_dir(){
         return 1
     fi
 
-    # 使用find命令递归查找视频文件并添加到数组
+    # 使用find命令递归查找所有文件并添加到数组
     while IFS= read -r -d '' file; do
-
-        file_paths+=("$file")
+        all_files+=("$file")
+    done < <(find "$base_path" -type f -print0)
     
-    done < <(find "$base_path" -type f \( -iname "*.mp4" -o -iname "*.avi" -o -iname "*.mkv" -o -iname "*.mov" -o -iname "*.flv" \) -print0)
+    # 筛选符合video_format要求的文件并输出结果
+    for file in "${all_files[@]}"; do
+        if is_video_format "$file"; then
+            video_file_paths+=("$file")
+        else
+            other_file_paths+=("$file")
+        fi
+    done
 
 }
 
-function transcode(){
+function transcode_video(){
    
     # 检查输入参数是否为有效文件
     if [ -z "$1" ] || [ ! -f "$1" ]; then
@@ -314,6 +336,21 @@ function transcode(){
     }
 }
 
+# 将其他文件类型复制到新目录
+function copy_other_files(){ 
+    
+    local copyTotal=0
+    local file_path=""
+    for file_path in "${other_file_paths[@]}"; do
+        
+        let copyTotal=copyTotal+1
+        echo -e "\033[43;35m开始复制第 $copyTotal 个文件，共计 ${#other_file_paths[@]} 个文件\033[0m \n"
+        cp "$file_path" "${dest_dir}${file_path#$origin_dir}"
+    
+    done
+
+}
+
 function main(){
 
     # 如未提供目录参数，则进行配置设置
@@ -329,8 +366,8 @@ function main(){
     else
 
         silent_mode=1
-        origin_dir=$1
-        dest_dir=$2
+        origin_dir="$1"
+        dest_dir="$2"
 
     fi
 
@@ -347,38 +384,42 @@ function main(){
 
     # 设置视频码率
     set_video_bitrate
-
-    # 处理单个文件或目录输入
-    if [ -f "$origin_dir" ]; then
-        echo "当前输入路径为单个文件"
-        file_paths=("$origin_dir")
-
-    else
+    
+    # 检查输入是否为目录还是文件
+    if [ -d "$origin_dir" ]; then
         echo "当前输入路径为目录"
         origin_dir=$(printf "%s/" "${origin_dir}")
 
         lm_traverse_dir "$origin_dir"
 
+    else
+        echo "当前输入路径为单个文件"
+
+        # 判断是否为视频文件
+        if ! is_video_format "$origin_dir"; then
+            echo "Error: $origin_dir 不是视频文件"
+            exit 1
+        fi
+        video_file_paths=("$origin_dir")
     fi
 
-    # 输出文件路径数组数量
-    if [ ${#file_paths[@]} -eq 0 ]; then
+    # 输出视频文件路径数组数量
+    if [ ${#video_file_paths[@]} -eq 0 ]; then
         echo "文件路径数组为空！"
         exit 1
     fi
 
-    # 遍历文件路径数组并转码
+    # 遍历视频文件路径数组并转码
     transcodeTotal=0
-    for file_path in "${file_paths[@]}"; do
+    for file_path in "${video_file_paths[@]}"; do
         
         let transcodeTotal=transcodeTotal+1
-        echo -e "\033[43;35m开始转码第 $transcodeTotal 个文件，共计 ${#file_paths[@]} 个文件\033[0m \n"
-        transcode "$file_path"
+        echo -e "\033[43;35m开始转码第 $transcodeTotal 个文件，共计 ${#video_file_paths[@]} 个文件\033[0m \n"
+        transcode_video "$file_path"
     
     done
 
 
 }
-
 
 main "$@"
