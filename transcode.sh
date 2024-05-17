@@ -331,9 +331,9 @@ function transcode_video(){
     # 使用ffmpeg进行转码
     ffmpeg -hide_banner "${ffmpeg_decode_cmd[@]}" -i "$1" -strict -2 "${ffmpeg_videosize_cmd[@]}" "${ffmpeg_rc_cmd[@]}" "${ffmpeg_encode_cmd[@]}" "${ffmpeg_audio_cmd[@]}" -y "$new_file_path"
     if [ $? -eq 0 ]; then
-        _write_log "Transcode Success：$1"
+        _write_log "转码成功：$1"
     else
-        _write_log "Transcode Error：$1"
+        _write_log "转码失败：$1"
         return 1
     fi
 
@@ -352,7 +352,7 @@ function copy_other_files(){
     for file_path in "${other_file_paths[@]}"; do
         
         let copyTotal=copyTotal+1
-        echo -e "\033[43;35m开始复制第 $copyTotal 个文件，共计 ${#other_file_paths[@]} 个文件\033[0m \n"
+        _write_log "开始复制第 $copyTotal 个文件，共计 ${#other_file_paths[@]} 个文件"
         cp "$file_path" "${dest_dir}${file_path#$origin_dir}"
     
     done
