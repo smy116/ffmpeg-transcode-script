@@ -36,6 +36,7 @@ function set_config(){
     echo " 选择解码器 编码器："
     echo " 1. 软件解码 + RockChip MPP硬件编码"
     echo " 2. RockChip MPP硬件编解码（默认）"
+    echo " 3. 软件编解码"
 
     read -p "请输入选项：" ans
     ans=${ans:-2}
@@ -60,6 +61,16 @@ function set_config(){
                 ffmpeg_encode_cmd=(-c:v h264_rkmpp)
             elif [ $ffmpeg_code = "hevc" ]  ; then
                 ffmpeg_encode_cmd=(-c:v hevc_rkmpp)
+            fi
+        ;;
+        2)
+            ffmpeg_decode="CPU"
+            ffmpeg_decode_cmd=()
+
+            if [ $ffmpeg_code = "h264" ] ; then
+                ffmpeg_encode_cmd=(-c:v libx264)
+            elif [ $ffmpeg_code = "hevc" ]  ; then
+                ffmpeg_encode_cmd=(-c:v libx265)
             fi
         ;;
     esac
