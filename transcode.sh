@@ -8,9 +8,19 @@
 
 function set_config(){
     # 选择原始文件目录
-    read -p "输入原始文件目录：" origin_dir
-    read -p "输入目标文件目录：" dest_dir
+    read -p "输入原始文件目录（不要以/结尾）：" origin_dir
+    if [ -z "$origin_dir" ]; then
+        echo "原始文件目录不能为空"
+        exit 0
+    fi
     
+    read -p "输入目标文件目录（不要以/结尾）：" dest_dir
+    if [ -z "$dest_dir" ]; then
+        echo "目标文件目录不能为空"
+        exit 0
+    fi
+
+
     # 选择转码格式
     echo " 选择转码输出格式："
     echo " 1. h264"
