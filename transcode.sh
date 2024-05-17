@@ -9,16 +9,10 @@
 function set_config(){
     # 选择原始文件目录
     read -p "输入原始文件目录（不要以/结尾）：" origin_dir
-    if [ -z "$origin_dir" ]; then
-        echo "原始文件目录不能为空"
-        exit 0
-    fi
+    [ -z "$origin_dir" ] && { echo "原始文件目录不能为空"; exit 0; }
     
     read -p "输入目标文件目录（不要以/结尾）：" dest_dir
-    if [ -z "$dest_dir" ]; then
-        echo "目标文件目录不能为空"
-        exit 0
-    fi
+    [ -z "$dest_dir" ] && { echo "原始文件目录不能为空"; exit 0; }
 
 
     # 选择转码格式
@@ -131,12 +125,12 @@ function lm_traverse_dir(){
 
     for file in `ls "$1"`
     do
-        if [ -d "$1""/""$file" ]  	#"-d" 判断是否为目录
+        if [ -d "$1/$file" ]  	#"-d" 判断是否为目录
         then
-            lm_traverse_dir "$1""/""$file"	#遍历子目录
+            lm_traverse_dir "$1/$file"	#遍历子目录
         else  
               
-            absolute_path="$1""/""$file"
+            absolute_path="$1/$file"
 
             if [[ "$videotype_list[@]" =~ ".${absolute_path##*.}" ]];then 	#判断是否为视频
                 
