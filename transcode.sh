@@ -24,13 +24,13 @@ video_format=("mp4" "mkv" "avi" "wmv" "flv" "mov")
 # 根据用户选择设置输出格式
 function set_format() {
     local ans
-    echo " 选择转码输出格式："
+    echo "选择转码输出格式："
     
     if [ $silent_mode -eq 1 ]; then
         ans="abc"
     else
-        echo " 1. h264"
-        echo " 2. hevc（默认）"
+        echo "1. h264"
+        echo "2. hevc（默认）"
         read -p "请输入选项：" ans
     fi
 
@@ -50,14 +50,14 @@ function set_format() {
 # 根据用户选择设置遍解码器
 function set_coder() {
     local ans
-    echo " 选择编码器 解码器："
+    echo "选择编码器 解码器："
     
     if [ $silent_mode -eq 1 ]; then
         ans="abc"
     else
-        echo " 1. 软件解码 + RockChip MPP硬件编码"
-        echo " 2. RockChip MPP硬件编解码（默认）"
-        echo " 3. 软件编解码"
+        echo "1. 软件解码 + RockChip MPP硬件编码"
+        echo "2. RockChip MPP硬件编解码（默认）"
+        echo "3. 软件编解码"
         read -p "请输入选项：" ans
     fi
 
@@ -111,16 +111,16 @@ function set_coder() {
 function set_video_size() {
     local ans video_high
     # 根据用户选择设置视频大小
-    echo " 选择视频大小："
+    echo "选择视频大小："
 
     if [ $silent_mode -eq 1 ]; then
         ans="abc"
     else
-        echo " 1. 4K"
-        echo " 2. 1080P"
-        echo " 3. 720P（默认）"
-        echo " 4. 480P"
-        echo " 5. 360P"
+        echo "1. 4K"
+        echo "2. 1080P"
+        echo "3. 720P（默认）"
+        echo "4. 480P"
+        echo "5. 360P"
         read -p "请输入选项：" ans
     fi
 
@@ -161,16 +161,16 @@ function set_video_size() {
 function set_video_size() {
     local ans video_high
     # 根据用户选择设置视频大小
-    echo " 选择视频大小："
+    echo "选择视频大小："
 
     if [ $silent_mode -eq 1 ]; then
         ans="abc"
     else
-        echo " 1. 4K"
-        echo " 2. 1080P"
-        echo " 3. 720P（默认）"
-        echo " 4. 480P"
-        echo " 5. 360P"
+        echo "1. 4K"
+        echo "2. 1080P"
+        echo "3. 720P（默认）"
+        echo "4. 480P"
+        echo "5. 360P"
         read -p "请输入选项：" ans
     fi
 
@@ -212,15 +212,15 @@ function set_video_size() {
 function set_video_bitrate() {
     local ans video_bitrate
     # 根据用户选择设置视频码率
-    echo " 选择视频码率或直接输入码率："
+    echo "选择视频码率或直接输入码率："
     if [ $silent_mode -eq 1 ]; then
         ans="abc"
     else
-        echo " 1. 1000k"
-        echo " 2. 2000k（默认）"
-        echo " 3. 3000k"
-        echo " 4. 4000k"
-        echo " 5. 5000k"
+        echo "1. 1000k"
+        echo "2. 2000k（默认）"
+        echo "3. 3000k"
+        echo "4. 4000k"
+        echo "5. 5000k"
         read -p "请输入选项：" ans
     fi
 
