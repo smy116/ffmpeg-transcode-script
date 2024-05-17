@@ -19,18 +19,18 @@ ffmpeg_rc_cmd=()
 ffmpeg_decode_cmd=()
 ffmpeg_audio_cmd=()
 ffmpeg_encode_cmd=()
-
+video_format=("mp4" "mkv" "avi" "wmv" "flv" "mov") 
 
 # 根据用户选择设置输出格式
 function set_format() {
     local ans
     echo " 选择转码输出格式："
-    echo " 1. h264"
-    echo " 2. hevc（默认）"
     
     if [ $silent_mode -eq 1 ]; then
         ans="abc"
     else
+        echo " 1. h264"
+        echo " 2. hevc（默认）"
         read -p "请输入选项：" ans
     fi
 
@@ -51,13 +51,13 @@ function set_format() {
 function set_coder() {
     local ans
     echo " 选择编码器 解码器："
-    echo " 1. 软件解码 + RockChip MPP硬件编码"
-    echo " 2. RockChip MPP硬件编解码（默认）"
-    echo " 3. 软件编解码"
     
     if [ $silent_mode -eq 1 ]; then
         ans="abc"
     else
+        echo " 1. 软件解码 + RockChip MPP硬件编码"
+        echo " 2. RockChip MPP硬件编解码（默认）"
+        echo " 3. 软件编解码"
         read -p "请输入选项：" ans
     fi
 
@@ -94,7 +94,7 @@ function set_coder() {
             fi
         ;;
         *)
-            echo "无效选择，将使用默认选项：MPP"
+            echo "无效选择，将使用默认选项：RockChip MPP硬件编解码"
             ffmpeg_decode="MPP"
             ffmpeg_decode_cmd=(-hwaccel rkmpp -hwaccel_output_format drm_prime -afbc rga)
             
@@ -112,15 +112,15 @@ function set_video_size() {
     local ans video_high
     # 根据用户选择设置视频大小
     echo " 选择视频大小："
-    echo " 1. 4K"
-    echo " 2. 1080P"
-    echo " 3. 720P（默认）"
-    echo " 4. 480P"
-    echo " 5. 360P"
 
     if [ $silent_mode -eq 1 ]; then
         ans="abc"
     else
+        echo " 1. 4K"
+        echo " 2. 1080P"
+        echo " 3. 720P（默认）"
+        echo " 4. 480P"
+        echo " 5. 360P"
         read -p "请输入选项：" ans
     fi
 
@@ -162,15 +162,15 @@ function set_video_size() {
     local ans video_high
     # 根据用户选择设置视频大小
     echo " 选择视频大小："
-    echo " 1. 4K"
-    echo " 2. 1080P"
-    echo " 3. 720P（默认）"
-    echo " 4. 480P"
-    echo " 5. 360P"
 
     if [ $silent_mode -eq 1 ]; then
         ans="abc"
     else
+        echo " 1. 4K"
+        echo " 2. 1080P"
+        echo " 3. 720P（默认）"
+        echo " 4. 480P"
+        echo " 5. 360P"
         read -p "请输入选项：" ans
     fi
 
@@ -213,14 +213,14 @@ function set_video_bitrate() {
     local ans video_bitrate
     # 根据用户选择设置视频码率
     echo " 选择视频码率或直接输入码率："
-    echo " 1. 1000k"
-    echo " 2. 2000k（默认）"
-    echo " 3. 3000k"
-    echo " 4. 4000k"
-    echo " 5. 5000k"
     if [ $silent_mode -eq 1 ]; then
         ans="abc"
     else
+        echo " 1. 1000k"
+        echo " 2. 2000k（默认）"
+        echo " 3. 3000k"
+        echo " 4. 4000k"
+        echo " 5. 5000k"
         read -p "请输入选项：" ans
     fi
 
@@ -261,8 +261,8 @@ function set_video_bitrate() {
 function lm_traverse_dir(){
     
     local base_path="$1"
+    local find_condition=""
     
-    echo  "${filter[@]}"
     # 检查是否为目录
     if [ ! -d "$base_path" ]; then
         echo "错误: $base_path 不是一个目录."
