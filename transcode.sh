@@ -63,7 +63,7 @@ function set_config(){
                 ffmpeg_encode_cmd=(-c:v hevc_rkmpp)
             fi
         ;;
-        2)
+        3)
             ffmpeg_decode="CPU"
             ffmpeg_decode_cmd=()
 
