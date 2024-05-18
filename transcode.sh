@@ -391,7 +391,7 @@ function copy_sub_files(){
         
         let copyTotal=copyTotal+1
         _write_log "字幕文件：复制第 $copyTotal 个文件，共计 ${#sub_file_paths[@]} 个文件"
-        cp "$file_path" "${dest_dir}${file_path#$origin_dir}"
+        _copy_file "$file_path"
     
     done
 
@@ -408,7 +408,7 @@ function copy_other_files(){
         
         let copyTotal=copyTotal+1
         _write_log "其他文件：复制第 $copyTotal 个文件，共计 ${#other_file_paths[@]} 个文件"
-        cp "$file_path" "${dest_dir}${file_path#$origin_dir}"
+        _copy_file "$file_path"
     
     done
 
