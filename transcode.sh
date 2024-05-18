@@ -39,7 +39,7 @@ function _write_log() {
 # 验证路径输入
 function _validate_path() {
     local path="$1"
-    if [[ "$path" == *".."* || "$path" == *"."* ]]; then
+    if [[ "$path" == "../"* || "$path" == "./"* ]]; then
         echo "错误: 非法的路径输入"
         exit 1
     fi
@@ -91,12 +91,11 @@ function _copy_file() {
 function _get_video_bitrate() {
     local video_path="$1"
     local bitrate=$(ffprobe -v error -select_streams v:0 -show_entries stream=bit_rate -of default=noprint_wrappers=1:nokey=1 "$video_path")
+  
     if [[ -n "$bitrate" ]]; then
-        # 将码率除以1000转换为kbps，并四舍五入取整
-        local kbps=$(echo "scale=0; ($bitrate + 500) / 1000" | bc)
-        return "$kbps"
+        echo "$bitrate"
     else
-        return 0
+        echo "0"
     fi
 }
 
@@ -387,7 +386,7 @@ function transcode_video(){
     local origin_video_bitrate=$(_get_video_bitrate "$1")
 
     # 如果获取到的视频码率为0，输出错误
-    if [ "$origin_video_bitrate" -eq 0 ]; then
+    if [ "$origin_video_bitrate" -eq "0"  ]; then
         _write_log "转码失败,无法获取原视频码率：$relative_path"
         return 1
     fi
