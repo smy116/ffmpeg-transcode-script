@@ -331,9 +331,12 @@ function transcode_video(){
     # 使用ffmpeg进行转码
     ffmpeg -hide_banner "${ffmpeg_decode_cmd[@]}" -i "$1" -strict -2 "${ffmpeg_videosize_cmd[@]}" "${ffmpeg_rc_cmd[@]}" "${ffmpeg_encode_cmd[@]}" "${ffmpeg_audio_cmd[@]}" -y "$new_file_path"
     if [ $? -eq 0 ]; then
-        _write_log "转码成功：$1"
+        # 文件大小计算
+        local origin_file_size=$(du -h "$1" | cut -f1)
+        local new_file_size=$(du -h "$new_file_path" | cut -f1)
+        _write_log "转码成功：$relative_path [$origin_file_size -> $new_file_size]"
     else
-        _write_log "转码失败：$1"
+        _write_log "转码失败：$relative_path"
         return 1
     fi
 
