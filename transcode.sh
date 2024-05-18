@@ -26,6 +26,7 @@ ffmpeg_audio_cmd=()
 ffmpeg_encode_cmd=()
 video_format=("mp4" "mkv" "avi" "wmv" "flv" "mov" "m4v" "rm" "rmvb" "3gp" "vob")
 sub_format=("srt" "ass" "ssa" "vtt" "sub" "idx")
+video_bitrate=2000000
 
 
 # 日志写入
@@ -75,6 +76,21 @@ function _copy_file() {
     return 0
 
 }
+
+
+# 获取视频码率，单位为kbps
+function _get_video_bitrate() {
+    local video_path="$1"
+    local bitrate=$(ffprobe -v error -select_streams v:0 -show_entries stream=bit_rate -of default=noprint_wrappers=1:nokey=1 "$video_path")
+    if [[ -n "$bitrate" ]]; then
+        # 将码率除以1000转换为kbps，并四舍五入取整
+        local kbps=$(echo "scale=0; ($bitrate + 500) / 1000" | bc)
+        return "$kbps"
+    else
+        return 0
+    fi
+}
+
 
 # 根据用户选择设置输出格式
 function set_format() {
@@ -263,7 +279,7 @@ function set_video_size() {
 
 # 设置视频码率
 function set_video_bitrate() {
-    local ans video_bitrate
+
     # 根据用户选择设置视频码率
     echo "选择视频码率或直接输入码率："
     if [ $silent_mode -eq 1 ]; then
@@ -304,8 +320,8 @@ function set_video_bitrate() {
             fi
         ;;
     esac
-    video_bitrate="$video_bitrate""k"
-    ffmpeg_rc_cmd=(-rc_mode VBR -b:v $video_bitrate -maxrate $video_bitrate -bufsize $video_bitrate)
+    # 转换为比特每秒（bit/s）
+    video_bitrate=$((video_bitrate * 1000))
 
 }
 
@@ -357,6 +373,22 @@ function transcode_video(){
 
     # 后缀替换
     new_file_path="${new_file_path%.*}.mp4"
+
+    # 获取视频码率
+    local origin_video_bitrate=$(_get_video_bitrate "$1")
+
+    # 如果获取到的视频码率为0，输出错误
+    if [ "$origin_video_bitrate" -eq 0 ]; then
+        _write_log "转码失败,无法获取原视频码率：$relative_path"
+        return 1
+    fi
+
+    # 如果原视频码率小于设置码率，则使用原视频码率
+    if [ "$origin_video_bitrate" -lt "$video_bitrate" ]; then
+        video_bitrate="$origin_video_bitrate"
+    fi
+
+    ffmpeg_rc_cmd=(-rc_mode VBR -b:v $video_bitrate -maxrate $((video_bitrate * 12 / 10)) -bufsize $((video_bitrate * 2)))
     
     # 创建文件夹
     if [ ! -d "${new_file_path%/*}" ]; then
@@ -371,7 +403,7 @@ function transcode_video(){
         local new_file_size=$(du -h "$new_file_path" | cut -f1)
         _write_log "转码成功：$relative_path [$origin_file_size -> $new_file_size]"
     else
-        _write_log "转码失败：$relative_path"
+        _write_log "转码失败,FFmpeg错误：$relative_path"
         return 1
     fi
 
@@ -396,7 +428,6 @@ function copy_sub_files(){
     done
 
 }
-
 
 
 # 将其他文件类型复制到新目录
