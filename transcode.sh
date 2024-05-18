@@ -16,8 +16,8 @@ video_file_paths=()
 sub_file_paths=()
 other_file_paths=()
 silent_mode=0
-origin_dir=""
-dest_dir=""
+origin_path=""
+dest_path=""
 ffmpeg_decode=""
 ffmpeg_videosize_cmd=()
 ffmpeg_rc_cmd=()
@@ -70,8 +70,8 @@ function _is_sub_format() {
 # 将指定文件直接复制至新路径
 function _copy_file() {
 
-    local relative_path="${1#$origin_dir}"
-    local new_file_path="${dest_dir}${relative_path}"
+    local relative_path="${1#$origin_path}"
+    local new_file_path="${dest_path}${relative_path}"
 
     # 如果目标文件已存在，删除并覆盖
     if [ -f "$new_file_path" ]; then
@@ -328,8 +328,14 @@ function transcode_video(){
     fi
 
     # 安全路径处理
-    local relative_path="${1#$origin_dir}"
-    local new_file_path="${dest_dir}${relative_path}"
+    # 检查origin_path是否为目录还是文件
+    if [ -d "$origin_path" ]; then
+        local relative_path="${1#$origin_path}"
+    else
+        local relative_path="/$(basename $1)"
+    fi
+
+    local new_file_path="${dest_path}${relative_path}"
 
     # 后缀替换
     new_file_path="${new_file_path%.*}.mp4"
@@ -411,25 +417,23 @@ function main(){
     if [ ! -n "$1" ];then
         
         # 读取并验证原始文件目录和目标文件目录
-        read -p "输入原始文件目录：" origin_dir
-        [ -z "$origin_dir" ] && { echo "原始文件目录不能为空"; exit 1; }
+        read -p "输入原始文件目录：" origin_path
+        [ -z "$origin_path" ] && { echo "原始文件目录不能为空"; exit 1; }
         
-        read -p "输入目标文件目录：" dest_dir
-        [ -z "$dest_dir" ] && { echo "目标文件目录不能为空"; exit 1; }
+        read -p "输入目标文件目录：" dest_path
+        [ -z "$dest_path" ] && { echo "目标文件目录不能为空"; exit 1; }
 
     else
 
         silent_mode=1
-        origin_dir="$1"
-        dest_dir="$2"
+        origin_path="$1"
+        dest_path="$2"
 
     fi
 
     # 验证路径输入
-    _validate_path "$origin_dir"
-    _validate_path "$dest_dir"
-
-    # dest_dir=$(printf "%s/" "${dest_dir}")
+    _validate_path "$origin_path"
+    _validate_path "$dest_path"
 
     # 选择转码输出格式
     set_format
@@ -444,21 +448,25 @@ function main(){
     set_video_bitrate
     
     # 检查输入是否为目录还是文件
-    if [ -d "$origin_dir" ]; then
+    if [ -d "$origin_path" ]; then
         echo "当前输入路径为目录"
-        # origin_dir=$(printf "%s/" "${origin_dir}")
 
-        lm_traverse_dir "$origin_dir"
+        lm_traverse_dir "$origin_path"
+
+        # 复制字幕文件
+        if [ ${#sub_file_paths[@]} -gt 0 ]; then
+            copy_sub_files
+        fi
 
     else
         echo "当前输入路径为单个文件"
 
         # 判断是否为视频文件
-        if ! _is_video_format "$origin_dir"; then
-            echo "Error: $origin_dir 不是视频文件"
+        if ! _is_video_format "$origin_path"; then
+            echo "Error: $origin_path 不是视频文件"
             exit 1
         fi
-        video_file_paths=("$origin_dir")
+        video_file_paths=("$origin_path")
     fi
 
     # 输出视频文件路径数组数量
@@ -476,12 +484,6 @@ function main(){
         transcode_video "$file_path"
     
     done
-
-    # 复制字幕文件
-    if [ ${#sub_file_paths[@]} -gt 0 ]; then
-        copy_sub_files
-    fi
-
 
 }
 
