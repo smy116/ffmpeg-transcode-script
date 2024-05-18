@@ -236,54 +236,6 @@ function set_video_size() {
     
 }
 
-function set_video_size() {
-    local ans video_high
-    # 根据用户选择设置视频大小
-    echo "选择视频大小："
-
-    if [ $silent_mode -eq 1 ]; then
-        ans="abc"
-    else
-        echo "1. 4K"
-        echo "2. 1080P"
-        echo "3. 720P（默认）"
-        echo "4. 480P"
-        echo "5. 360P"
-        read -p "请输入选项：" ans
-    fi
-
-    case "$ans" in
-        1)
-            video_high=2160
-        ;;
-        2)
-            video_high=1080
-        ;;
-        3)
-            video_high=720
-        ;;
-        4)
-            video_high=480
-        ;;
-        5)
-            video_high=360
-        ;;
-        *)
-            echo "无效选择，将使用默认选项：720P"
-            video_high=720
-        ;;
-    esac
-
-    case "$ffmpeg_decode" in
-        "CPU")
-            ffmpeg_videosize_cmd=(-vf scale=-2:"'min($video_high,ih)'":flags=fast_bilinear,format=yuv420p)
-        ;;
-        "MPP")
-            ffmpeg_videosize_cmd=(-vf scale_rkrga=w=-2:h="'min($video_high,ih)'":format=nv12:afbc=1)
-        ;;
-    esac
-    
-}
 
 # 设置视频码率
 function set_video_bitrate() {
