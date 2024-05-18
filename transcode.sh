@@ -13,6 +13,7 @@
 IFS=$'\t\n'
 SCRIPT_DIR=$(dirname "$0")
 video_file_paths=()
+sub_file_paths=()
 other_file_paths=()
 silent_mode=0
 origin_dir=""
@@ -23,7 +24,57 @@ ffmpeg_rc_cmd=()
 ffmpeg_decode_cmd=()
 ffmpeg_audio_cmd=()
 ffmpeg_encode_cmd=()
-video_format=("mp4" "mkv" "avi" "wmv" "flv" "mov" "m4v" "rm" "rmvb" "3gp" "vob") 
+video_format=("mp4" "mkv" "avi" "wmv" "flv" "mov" "m4v" "rm" "rmvb" "3gp" "vob")
+sub_format=("srt" "ass" "ssa" "vtt" "sub" "idx")
+
+
+# 日志写入
+function _write_log() {
+    local message="$1"
+    echo "$1"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $message" >> "${SCRIPT_DIR}/transcode.log"
+}
+
+# 检查文件是否为视频文件
+function _is_video_format() {
+    local file="$1"
+    for format in "${video_format[@]}"; do
+        if [[ "$file" == *."$format" ]]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+# 检查文件是否为字幕文件
+function _is_sub_format() {
+    local file="$1"
+    for format in "${sub_format[@]}"; do
+        if [[ "$file" == *."$format" ]]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+# 将指定文件直接复制至新路径
+function _copy_file() {
+
+    local relative_path="${1#$origin_dir}"
+    local new_file_path="${dest_dir}${relative_path}"
+
+    # 如果目标文件已存在，删除并覆盖
+    if [ -f "$new_file_path" ]; then
+        rm -f "$new_file_path" || {
+            echo "Error: Failed to remove existing file '$new_file_path'."
+            return 1
+        }
+    fi
+
+    cp "$1" "$new_file_path"
+    return 0
+
+}
 
 # 根据用户选择设置输出格式
 function set_format() {
@@ -161,7 +212,6 @@ function set_video_size() {
     
 }
 
-
 function set_video_size() {
     local ans video_high
     # 根据用户选择设置视频大小
@@ -211,7 +261,6 @@ function set_video_size() {
     
 }
 
-
 # 设置视频码率
 function set_video_bitrate() {
     local ans video_bitrate
@@ -260,25 +309,6 @@ function set_video_bitrate() {
 
 }
 
-# 检查文件是否符合给定的视频格式列表
-is_video_format() {
-    local file="$1"
-    for format in "${video_format[@]}"; do
-        if [[ "$file" == *."$format" ]]; then
-            return 0
-        fi
-    done
-    return 1
-}
-
-# 日志写入
-function _write_log() {
-    local message="$1"
-    echo "$1"
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $message" >> "${SCRIPT_DIR}/transcode.log"
-}
-
-
 # 遍历目录并将文件路径添加到列表
 function lm_traverse_dir(){
     
@@ -297,11 +327,16 @@ function lm_traverse_dir(){
         all_files+=("$file")
     done < <(find "$base_path" -type f -print0)
     
-    # 筛选符合video_format要求的文件并输出结果
+    # 筛选文件类型
     for file in "${all_files[@]}"; do
-        if is_video_format "$file"; then
+        if _is_video_format "$file"; then
+            # 视频文件
             video_file_paths+=("$file")
+        elif _is_sub_format "$file"; then
+            # 字幕文件
+            sub_file_paths+=("$file")
         else
+            # 其他文件
             other_file_paths+=("$file")
         fi
     done
@@ -320,7 +355,7 @@ function transcode_video(){
     local relative_path="${1#$origin_dir}"
     local new_file_path="${dest_dir}${relative_path}"
 
-    # 确保只进行必要的后缀替换
+    # 后缀替换
     new_file_path="${new_file_path%.*}.mp4"
     
     # 创建文件夹
@@ -347,6 +382,23 @@ function transcode_video(){
     }
 }
 
+# 将字幕文件类型复制到新目录
+function copy_sub_files(){ 
+    
+    local copyTotal=0
+    local file_path=""
+    for file_path in "${sub_file_paths[@]}"; do
+        
+        let copyTotal=copyTotal+1
+        _write_log "字幕文件：复制第 $copyTotal 个文件，共计 ${#sub_file_paths[@]} 个文件"
+        cp "$file_path" "${dest_dir}${file_path#$origin_dir}"
+    
+    done
+
+}
+
+
+
 # 将其他文件类型复制到新目录
 function copy_other_files(){ 
     
@@ -355,7 +407,7 @@ function copy_other_files(){
     for file_path in "${other_file_paths[@]}"; do
         
         let copyTotal=copyTotal+1
-        _write_log "开始复制第 $copyTotal 个文件，共计 ${#other_file_paths[@]} 个文件"
+        _write_log "其他文件：复制第 $copyTotal 个文件，共计 ${#other_file_paths[@]} 个文件"
         cp "$file_path" "${dest_dir}${file_path#$origin_dir}"
     
     done
@@ -407,7 +459,7 @@ function main(){
         echo "当前输入路径为单个文件"
 
         # 判断是否为视频文件
-        if ! is_video_format "$origin_dir"; then
+        if ! _is_video_format "$origin_dir"; then
             echo "Error: $origin_dir 不是视频文件"
             exit 1
         fi
@@ -429,6 +481,11 @@ function main(){
         transcode_video "$file_path"
     
     done
+
+    # 复制字幕文件
+    if [ ${#sub_file_paths[@]} -gt 0 ]; then
+        copy_sub_files
+    fi
 
 
 }
