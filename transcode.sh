@@ -36,6 +36,15 @@ function _write_log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $message" >> "${SCRIPT_DIR}/transcode.log"
 }
 
+# 验证路径输入
+function _validate_path() {
+    local path="$1"
+    if [[ "$path" == *".."* || "$path" == *"."* ]]; then
+        echo "错误: 非法的路径输入"
+        exit 1
+    fi
+}
+
 # 检查文件是否为视频文件
 function _is_video_format() {
     local file="$1"
@@ -465,7 +474,11 @@ function main(){
 
     fi
 
-    dest_dir=$(printf "%s/" "${dest_dir}")
+    # 验证路径输入
+    _validate_path "$origin_dir"
+    _validate_path "$dest_dir"
+
+    # dest_dir=$(printf "%s/" "${dest_dir}")
 
     # 选择转码输出格式
     set_format
@@ -482,7 +495,7 @@ function main(){
     # 检查输入是否为目录还是文件
     if [ -d "$origin_dir" ]; then
         echo "当前输入路径为目录"
-        origin_dir=$(printf "%s/" "${origin_dir}")
+        # origin_dir=$(printf "%s/" "${origin_dir}")
 
         lm_traverse_dir "$origin_dir"
 
