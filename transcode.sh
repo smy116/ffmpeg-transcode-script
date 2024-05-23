@@ -362,7 +362,7 @@ function transcode_video(){
     fi
 
     # 使用ffmpeg进行转码
-    ffmpeg -hide_banner "${ffmpeg_decode_cmd[@]}" -i "$1" -strict -2 "${ffmpeg_videosize_cmd[@]}" "${ffmpeg_rc_cmd[@]}" "${ffmpeg_encode_cmd[@]}" "${ffmpeg_audio_cmd[@]}" -y "$new_file_path"
+    ffmpeg -hide_banner "${ffmpeg_decode_cmd[@]}" -i "$1" -strict -2 "${ffmpeg_videosize_cmd[@]}" "${ffmpeg_rc_cmd[@]}" "${ffmpeg_encode_cmd[@]}" "${ffmpeg_audio_cmd[@]}" -c:s mov_text -map 0:v -map 0:a -map 0:s? -y "$new_file_path"
     if [ $? -eq 0 ]; then
         # 文件大小计算
         local origin_file_size=$(du -h "$1" | cut -f1)
