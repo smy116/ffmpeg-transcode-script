@@ -354,7 +354,7 @@ function transcode_video(){
         video_bitrate="$origin_video_bitrate"
     fi
 
-    ffmpeg_rc_cmd=(-rc_mode VBR -b:v $video_bitrate -maxrate $((video_bitrate * 12 / 10)) -bufsize $((video_bitrate * 2)) -g:v 30)
+    ffmpeg_rc_cmd=(-rc_mode VBR -b:v $video_bitrate -maxrate $((video_bitrate * 12 / 10)) -bufsize $((video_bitrate * 2)) -g:v 120)
     
     # 创建文件夹
     if [ ! -d "${new_file_path%/*}" ]; then
